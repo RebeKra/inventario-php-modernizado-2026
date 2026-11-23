@@ -17,16 +17,15 @@ public function db_connect()
 {
   mysqli_report(MYSQLI_REPORT_OFF);
   $this->con = mysqli_connect(DB_HOST,DB_USER,DB_PASS);
-  if(!$this->con)
-         {
-           die(" Database connection failed:". mysqli_connect_error());
-         } else {
-           $select_db = $this->con->select_db(DB_NAME);
-             if(!$select_db)
-             {
-               die("Failed to Select Database". mysqli_connect_error());
-             }
-         }
+  // Si la base no responde, se corta con un error 503 y sin detalles (H-15).
+  // Antes respondía 200 con el mensaje del error: la verificación de sesión de
+  // nginx lo habría tomado como "acceso permitido".
+  if(!$this->con || !$this->con->select_db(DB_NAME))
+  {
+    error_log('No se pudo conectar a la base de datos: ' . mysqli_connect_error());
+    http_response_code(503);
+    die('El sistema no está disponible en este momento. Inténtalo de nuevo en unos minutos.');
+  }
 }
 /*--------------------------------------------------------------*/
 /* Function for Close database connection

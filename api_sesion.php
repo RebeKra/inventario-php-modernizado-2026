@@ -16,6 +16,9 @@
 require_once('includes/load.php');
 header('Cache-Control: no-store');
 
+// Importante: nginx solo deja pasar con 2xx. Cualquier fallo (por ejemplo, la base
+// de datos caída responde 503) deja el acceso cerrado, nunca abierto (H-15).
+
 // Nivel mínimo para el módulo de productos (el mismo que exigía product.php).
 const NIVEL_PRODUCTOS = 2;
 

@@ -14,7 +14,7 @@ El objetivo es mostrar cómo se trabaja con código legado que no escribiste: en
 protegerlo con pruebas, corregirlo y migrarlo de forma gradual a una arquitectura moderna con
 **Python (FastAPI)** y **React + TypeScript**, sin detener el sistema.
 
-**Resultado:** 14 problemas encontrados y documentados (3 críticos), 11 corregidos, el módulo de productos
+**Resultado:** 15 problemas encontrados y documentados (3 críticos), 12 corregidos, el módulo de productos
 migrado a Python + React sin detener el sistema, y 65 pruebas automáticas que corren en cada cambio.
 
 ## Hoja de ruta
@@ -31,7 +31,7 @@ migrado a Python + React sin detener el sistema, y 65 pruebas automáticas que c
 
 ## Hallazgos y correcciones
 
-La [auditoría completa](AUDITORIA.md) detalla 14 hallazgos y su estado. Los más graves, ya corregidos:
+La [auditoría completa](AUDITORIA.md) detalla 15 hallazgos y su estado. Los más graves, ya corregidos:
 
 | Antes | Después |
 |---|---|
@@ -217,6 +217,9 @@ En cada `push` y pull request, [GitHub Actions](.github/workflows/ci.yml) ejecut
 | **Sistema completo** | Levanta todo con Docker Compose y ejecuta una [prueba de humo](scripts/prueba-humo.sh) a través de nginx: login, sesión compartida, CSRF, redirecciones y archivos bloqueados |
 
 El último trabajo solo corre si los tres primeros pasan.
+
+La prueba de humo ya demostró su valor en su primera ejecución: encontró que, si MySQL tardaba en arrancar,
+el sistema respondía "éxito" con la base caída y la verificación de sesión quedaba abierta (H-15).
 
 ## Próximos pasos
 

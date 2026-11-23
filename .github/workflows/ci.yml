@@ -34,7 +34,7 @@ jobs:
           --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
           --health-interval=5s --health-timeout=5s --health-retries=20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: shivammathur/setup-php@v2
         with:
           php-version: "8.3"
@@ -62,8 +62,8 @@ jobs:
       run:
         working-directory: api
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -80,8 +80,8 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: "22"
           cache: npm
@@ -100,9 +100,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [php, api, frontend]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Construir y levantar todos los servicios
-        run: docker compose up -d --build
+        # --wait espera a que la base, el sistema PHP y la API pasen sus verificaciones de salud.
+        run: docker compose up -d --build --wait --wait-timeout 300
       - name: Esperar a que la puerta de entrada responda
         run: |
           for intento in $(seq 1 60); do

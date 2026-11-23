@@ -12,10 +12,12 @@ services:
       - ./database/migraciones/001_stock_como_entero.sql:/docker-entrypoint-initdb.d/02-migracion-001.sql
     ports:
       - "3306:3306"
+    # Se verifica por TCP y con una consulta real: mientras MySQL ejecuta los scripts
+    # de inicio, solo escucha por socket local y "ping" respondería antes de tiempo.
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      test: ["CMD-SHELL", "mysql -h 127.0.0.1 -uapp -papp -e 'SELECT 1 FROM oswa_inv.products LIMIT 1'"]
       interval: 5s
-      retries: 15
+      retries: 30
 
   php-app:
     build: .
@@ -27,6 +29,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "php -r 'exit(@file_get_contents(\"http://localhost/index.php\") === false ? 1 : 0);'"]
+      interval: 5s
+      retries: 20
 
   api:
     build: ./api
@@ -38,6 +44,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v2/salud')"]
+      interval: 5s
+      retries: 20
 
   # Única entrada pública: enruta entre el sistema PHP y los módulos nuevos.
   gateway:
@@ -47,5 +57,7 @@ services:
     ports:
       - "8080:80"
     depends_on:
-      - php-app
-      - api
+      php-app:
+        condition: service_healthy
+      api:
+        condition: service_healthy

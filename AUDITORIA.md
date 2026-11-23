@@ -25,10 +25,12 @@ actual; en la Fase 2 esas pruebas se actualizarán para exigir el comportamiento
 | H-12 | Editar una venta no ajusta el stock y acepta el precio del navegador | Negocio | 🟠 Alta | ⏳ Pendiente (migración del módulo de ventas) |
 | H-13 | Eliminar un producto borra en cascada todo su historial de ventas 🧪 | Integridad de datos | 🟠 Alta | ✅ Corregido (Fase 3) |
 | H-14 | El volcado de la base (`oswa_inv.sql`, con los hashes de las contraseñas) y los archivos internos se pueden descargar desde el navegador | Seguridad | 🔴 Crítica | ✅ Corregido en la puerta de entrada (Fase 5) |
+| H-15 | Si la base de datos no responde, el sistema contesta 200 (éxito) con el mensaje de error; detrás de nginx, la verificación de sesión lo tomaría como acceso permitido | Seguridad / Disponibilidad | 🟠 Alta | ✅ Corregido (Fase 6) |
 
 H-11 y H-12 se encontraron durante la Fase 2, al revisar en detalle los archivos que había que modificar.
 H-13 se encontró en la Fase 3, al mapear el esquema de la base para la API nueva.
 H-14 se encontró en la Fase 5, al definir qué rutas debía publicar la puerta de entrada.
+H-15 lo detectó la prueba de humo de la integración continua (Fase 6), en el primer arranque con Docker.
 
 ## Detalle
 
@@ -118,6 +120,17 @@ H-14 se encontró en la Fase 5, al definir qué rutas debía publicar la puerta 
 - **Solución aplicada:** nginx solo publica lo necesario y responde 404 a volcados SQL, carpetas internas,
   documentación, configuración y archivos ocultos (`gateway/nginx.conf`). A futuro conviene mover el código
   fuera de la carpeta pública y dejar solo un punto de entrada.
+
+### H-15 · Errores de conexión con respuesta de éxito 🟠
+- **Dónde:** `includes/database.php` → `die("Database connection failed...")`, que responde con código 200.
+- **Problema:** para cualquier cliente automático, una base caída parecía una respuesta correcta. Detrás de
+  nginx era peor: `auth_request` deja pasar cualquier 2xx, así que con la base caída la verificación de
+  sesión habría *abierto* el acceso a la API en lugar de cerrarlo.
+- **Cómo se encontró:** en el primer arranque con Docker en GitHub Actions, el sistema PHP arrancó antes de que
+  MySQL terminara de inicializarse y la prueba de humo mostró páginas protegidas respondiendo 200.
+- **Solución aplicada:** la conexión fallida responde 503 sin detalles y queda en el log; la verificación de sesión
+  queda cerrada ante cualquier error. Además, Docker Compose ahora espera a que cada servicio esté sano
+  (verificaciones de salud reales) antes de arrancar el siguiente.
 
 ## Estrategia
 
