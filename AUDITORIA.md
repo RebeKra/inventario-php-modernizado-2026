@@ -22,9 +22,11 @@ actual; en la Fase 2 esas pruebas se actualizarán para exigir el comportamiento
 | H-09 | El stock se guarda como texto (`VARCHAR`) | Modelo de datos | 🟡 Media | ✅ Corregido con una migración (Fase 2) |
 | H-10 | SQL, lógica de negocio y HTML mezclados; estado global en todo el sistema | Mantenibilidad | 🔵 Baja | 🟡 En curso: capas nuevas en `src/` |
 | H-11 | Cambio de contraseña de otro usuario modificando el `id` del formulario 🧪 | Seguridad | 🔴 Crítica | ✅ Corregido (Fase 2) |
-| H-12 | Editar una venta no ajusta el stock y acepta el precio del navegador | Negocio | 🟠 Alta | ⏳ Pendiente (Fase 3) |
+| H-12 | Editar una venta no ajusta el stock y acepta el precio del navegador | Negocio | 🟠 Alta | ⏳ Pendiente (migración del módulo de ventas) |
+| H-13 | Eliminar un producto borra en cascada todo su historial de ventas 🧪 | Integridad de datos | 🟠 Alta | ✅ Corregido (Fase 3) |
 
 H-11 y H-12 se encontraron durante la Fase 2, al revisar en detalle los archivos que había que modificar.
+H-13 se encontró en la Fase 3, al mapear el esquema de la base para la API nueva.
 
 ## Detalle
 
@@ -98,6 +100,14 @@ H-11 y H-12 se encontraron durante la Fase 2, al revisar en detalle los archivos
 - **Problema:** cambiar la cantidad de una venta no devuelve ni descuenta stock, y el precio
   vuelve a tomarse del formulario.
 - **Plan:** se resolverá al migrar el módulo de ventas, reutilizando `RegistroDeVentas`.
+
+### H-13 · Borrado en cascada del historial de ventas 🟠
+- **Dónde:** `oswa_inv.sql` → `sales.product_id ... ON DELETE CASCADE`.
+- **Problema:** al eliminar un producto se borran todas sus ventas, y los reportes del pasado cambian.
+- **Prueba:** `ProductosTest::testNoSeEliminaUnProductoConVentasRegistradas` (PHP) y
+  `test_no_elimina_un_producto_con_ventas_para_no_perder_el_historial` (API).
+- **Solución aplicada:** ambos sistemas rechazan eliminar un producto con ventas. A futuro conviene
+  reemplazar el borrado por una baja lógica (producto inactivo) y quitar la cascada del esquema.
 
 ## Estrategia
 

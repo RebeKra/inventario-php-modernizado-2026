@@ -29,3 +29,16 @@ services:
     depends_on:
       db:
         condition: service_healthy
+
+  api:
+    build: ./api
+    environment:
+      DB_HOST: db
+      DB_USER: app
+      DB_PASS: app
+      DB_NAME: oswa_inv
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy

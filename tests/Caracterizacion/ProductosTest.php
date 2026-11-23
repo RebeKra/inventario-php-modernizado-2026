@@ -88,4 +88,18 @@ final class ProductosTest extends PruebaDeCaracterizacion
 
         $this->assertNull(TestDatabase::fetchOne('SELECT id FROM products WHERE id = 2'));
     }
+
+    /** Hallazgo H-13 corregido: eliminar un producto ya no borra su historial de ventas. */
+    public function testNoSeEliminaUnProductoConVentasRegistradas(): void
+    {
+        $this->comoAdministrador();
+        $this->navegador->post('/add_sale.php', [
+            's_id' => 1, 'quantity' => 2, 'price' => '0', 'total' => '0', 'date' => '2025-10-05', 'add_sale' => '',
+        ]);
+
+        $this->navegador->post('/delete_product.php', ['id' => 1], '/product.php');
+
+        $this->assertNotNull(TestDatabase::fetchOne('SELECT id FROM products WHERE id = 1'));
+        $this->assertNotNull(TestDatabase::fetchOne('SELECT id FROM sales WHERE product_id = 1'));
+    }
 }
