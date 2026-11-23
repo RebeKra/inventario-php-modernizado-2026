@@ -26,11 +26,12 @@ actual; en la Fase 2 esas pruebas se actualizarán para exigir el comportamiento
 | H-13 | Eliminar un producto borra en cascada todo su historial de ventas 🧪 | Integridad de datos | 🟠 Alta | ✅ Corregido (Fase 3) |
 | H-14 | El volcado de la base (`oswa_inv.sql`, con los hashes de las contraseñas) y los archivos internos se pueden descargar desde el navegador | Seguridad | 🔴 Crítica | ✅ Corregido en la puerta de entrada (Fase 5) |
 | H-15 | Si la base de datos no responde, el sistema contesta 200 (éxito) con el mensaje de error; detrás de nginx, la verificación de sesión lo tomaría como acceso permitido | Seguridad / Disponibilidad | 🟠 Alta | ✅ Corregido (Fase 6) |
+| H-16 | Un salto de línea antes de `<?php` en `includes/load.php` envía los encabezados antes de tiempo: sin búfer de salida fallan las redirecciones y los códigos de estado, y la verificación de sesión respondía 200 sin sesión 🧪 | Seguridad | 🔴 Crítica | ✅ Corregido (Fase 6) |
 
 H-11 y H-12 se encontraron durante la Fase 2, al revisar en detalle los archivos que había que modificar.
 H-13 se encontró en la Fase 3, al mapear el esquema de la base para la API nueva.
 H-14 se encontró en la Fase 5, al definir qué rutas debía publicar la puerta de entrada.
-H-15 lo detectó la prueba de humo de la integración continua (Fase 6), en el primer arranque con Docker.
+H-15 y H-16 los detectó la prueba de humo de la integración continua (Fase 6), al levantar el sistema con Docker.
 
 ## Detalle
 
@@ -126,11 +127,24 @@ H-15 lo detectó la prueba de humo de la integración continua (Fase 6), en el p
 - **Problema:** para cualquier cliente automático, una base caída parecía una respuesta correcta. Detrás de
   nginx era peor: `auth_request` deja pasar cualquier 2xx, así que con la base caída la verificación de
   sesión habría *abierto* el acceso a la API en lugar de cerrarlo.
-- **Cómo se encontró:** en el primer arranque con Docker en GitHub Actions, el sistema PHP arrancó antes de que
-  MySQL terminara de inicializarse y la prueba de humo mostró páginas protegidas respondiendo 200.
+- **Cómo se encontró:** al investigar por qué la prueba de humo veía páginas protegidas respondiendo 200 en Docker.
 - **Solución aplicada:** la conexión fallida responde 503 sin detalles y queda en el log; la verificación de sesión
-  queda cerrada ante cualquier error. Además, Docker Compose ahora espera a que cada servicio esté sano
+  queda cerrada ante cualquier error. Además, Docker Compose espera a que cada servicio esté sano
   (verificaciones de salud reales) antes de arrancar el siguiente.
+
+### H-16 · Encabezados enviados antes de tiempo 🔴
+- **Dónde:** `includes/load.php` empezaba con una línea en blanco antes de `<?php`. Como todas las páginas
+  lo incluyen primero, ese salto de línea se enviaba al navegador antes que cualquier encabezado.
+- **Problema:** el sistema solo funcionaba si PHP tenía activado el búfer de salida (`output_buffering`), que
+  la imagen oficial de PHP para Docker trae desactivado. Sin búfer, las redirecciones dejaban de funcionar y
+  los códigos de estado se ignoraban: la verificación de sesión respondía **200 aunque no hubiera sesión**, y
+  nginx dejaba pasar a la API y a la interfaz nueva a cualquiera.
+- **Cómo se encontró:** la prueba de humo en GitHub Actions mostró la API respondiendo 200 sin sesión. Se
+  reprodujo localmente apagando el búfer de salida y se ubicó el archivo con `headers_sent()`.
+- **Prueba:** las pruebas de caracterización ahora levantan el sistema **sin búfer de salida**, como Docker:
+  si alguien vuelve a escribir texto antes de los encabezados, 23 pruebas fallan.
+- **Solución aplicada:** se quitó la línea en blanco; la imagen de Docker usa la configuración de producción de
+  PHP; y la verificación de sesión guarda su salida en un búfer propio, para fallar cerrada en cualquier caso.
 
 ## Estrategia
 

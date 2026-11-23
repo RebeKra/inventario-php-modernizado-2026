@@ -25,7 +25,9 @@ final class TestServer
             'DB_NAME' => TestDatabase::config('NAME'),
         ]);
         $root = realpath(__DIR__ . '/../..');
-        $cmd = [PHP_BINARY, '-S', '127.0.0.1:' . getenv('TEST_PORT'), '-t', $root];
+        // Sin búfer de salida, como en la imagen oficial de PHP para Docker: así las pruebas
+        // detectan cualquier texto que se envíe antes de los encabezados (H-16).
+        $cmd = [PHP_BINARY, '-d', 'output_buffering=0', '-S', '127.0.0.1:' . getenv('TEST_PORT'), '-t', $root];
 
         self::$process = proc_open($cmd, [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes, $root, $env);
 

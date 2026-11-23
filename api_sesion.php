@@ -13,6 +13,9 @@
 |   401 → no inició sesión
 |   403 → sin permiso, o una modificación sin token CSRF válido
 */
+// Todo lo que se imprima queda en un búfer: así el código de estado siempre se
+// puede enviar, aunque algún archivo incluido escriba texto antes (H-16).
+ob_start();
 require_once('includes/load.php');
 header('Cache-Control: no-store');
 

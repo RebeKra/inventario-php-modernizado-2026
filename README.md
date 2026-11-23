@@ -14,7 +14,7 @@ El objetivo es mostrar cómo se trabaja con código legado que no escribiste: en
 protegerlo con pruebas, corregirlo y migrarlo de forma gradual a una arquitectura moderna con
 **Python (FastAPI)** y **React + TypeScript**, sin detener el sistema.
 
-**Resultado:** 15 problemas encontrados y documentados (3 críticos), 12 corregidos, el módulo de productos
+**Resultado:** 16 problemas encontrados y documentados (4 críticos), 13 corregidos, el módulo de productos
 migrado a Python + React sin detener el sistema, y 65 pruebas automáticas que corren en cada cambio.
 
 ## Hoja de ruta
@@ -31,7 +31,7 @@ migrado a Python + React sin detener el sistema, y 65 pruebas automáticas que c
 
 ## Hallazgos y correcciones
 
-La [auditoría completa](AUDITORIA.md) detalla 15 hallazgos y su estado. Los más graves, ya corregidos:
+La [auditoría completa](AUDITORIA.md) detalla 16 hallazgos y su estado. Los más graves, ya corregidos:
 
 | Antes | Después |
 |---|---|
@@ -218,8 +218,10 @@ En cada `push` y pull request, [GitHub Actions](.github/workflows/ci.yml) ejecut
 
 El último trabajo solo corre si los tres primeros pasan.
 
-La prueba de humo ya demostró su valor en su primera ejecución: encontró que, si MySQL tardaba en arrancar,
-el sistema respondía "éxito" con la base caída y la verificación de sesión quedaba abierta (H-15).
+La prueba de humo demostró su valor en sus primeras ejecuciones: en Docker, la API y la interfaz nueva
+quedaban abiertas sin iniciar sesión. La causa era una línea en blanco en un archivo de 2015 que solo
+pasaba desapercibida con cierta configuración de PHP (H-16), y además la base caída respondía "éxito" (H-15).
+Las pruebas de PHP ahora corren con la misma configuración que Docker para que no vuelva a pasar.
 
 ## Próximos pasos
 
