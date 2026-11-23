@@ -2,9 +2,10 @@
   require_once('includes/load.php');
   // Checkin What level user has permission to view this page
   page_require_level(1);
+  require_post('categorie.php');
 ?>
 <?php
-  $categorie = find_by_id('categories',(int)$_GET['id']);
+  $categorie = find_by_id('categories',(int)$_POST['id']);
   if(!$categorie){
     $session->msg("d","Missing Categorie id.");
     redirect('categorie.php');

@@ -82,40 +82,26 @@ function tableExists($table){
  /* coming from the login form.
 /*--------------------------------------------------------------*/
   function authenticate($username='', $password='') {
-    global $db;
-    $username = $db->escape($username);
-    $password = $db->escape($password);
-    $sql  = sprintf("SELECT id,username,password,user_level FROM users WHERE username ='%s' LIMIT 1", $username);
-    $result = $db->query($sql);
-    if($db->num_rows($result)){
-      $user = $db->fetch_assoc($result);
-      $password_request = sha1($password);
-      if($password_request === $user['password'] ){
-        return $user['id'];
-      }
-    }
-   return false;
+    $user = autenticacion()->autenticar($username, $password);
+    return $user ? $user['id'] : false;
   }
   /*--------------------------------------------------------------*/
-  /* Login with the data provided in $_POST,
-  /* coming from the login_v2.php form.
-  /* If you used this method then remove authenticate function.
+  /* Versión usada por login_v2.php: devuelve el usuario completo.
  /*--------------------------------------------------------------*/
    function authenticate_v2($username='', $password='') {
-     global $db;
-     $username = $db->escape($username);
-     $password = $db->escape($password);
-     $sql  = sprintf("SELECT id,username,password,user_level FROM users WHERE username ='%s' LIMIT 1", $username);
-     $result = $db->query($sql);
-     if($db->num_rows($result)){
-       $user = $db->fetch_assoc($result);
-       $password_request = sha1($password);
-       if($password_request === $user['password'] ){
-         return $user;
-       }
-     }
-    return false;
+     $user = autenticacion()->autenticar($username, $password);
+     return $user ? $user : false;
    }
+  /*--------------------------------------------------------------*/
+  /* Servicio de autenticación con bcrypt y migración de SHA-1 (H-01)
+  /*--------------------------------------------------------------*/
+  function autenticacion(){
+    global $conexion;
+    return new App\Auth\Autenticacion(
+      new App\Auth\UsuarioRepositorioMysql($conexion),
+      new App\Security\Contrasenas()
+    );
+  }
 
 
   /*--------------------------------------------------------------*/

@@ -2,9 +2,10 @@
   require_once('includes/load.php');
   // Checkin What level user has permission to view this page
   page_require_level(3);
+  require_post('sales.php');
 ?>
 <?php
-  $d_sale = find_by_id('sales',(int)$_GET['id']);
+  $d_sale = find_by_id('sales',(int)$_POST['id']);
   if(!$d_sale){
     $session->msg("d","Missing sale id.");
     redirect('sales.php');

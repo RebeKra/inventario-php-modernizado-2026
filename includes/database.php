@@ -15,6 +15,7 @@ class MySqli_DB {
 /*--------------------------------------------------------------*/
 public function db_connect()
 {
+  mysqli_report(MYSQLI_REPORT_OFF);
   $this->con = mysqli_connect(DB_HOST,DB_USER,DB_PASS);
   if(!$this->con)
          {
@@ -30,6 +31,14 @@ public function db_connect()
 /*--------------------------------------------------------------*/
 /* Function for Close database connection
 /*--------------------------------------------------------------*/
+
+/*--------------------------------------------------------------*/
+/* Conexión mysqli para el código nuevo (consultas preparadas)
+/*--------------------------------------------------------------*/
+public function conexion()
+{
+  return $this->con;
+}
 
 public function db_disconnect()
 {
@@ -48,11 +57,13 @@ public function query($sql)
       if (trim($sql != "")) {
           $this->query_id = $this->con->query($sql);
       }
-      if (!$this->query_id)
-        // only for Develope mode
-              die("Error on this Query :<pre> " . $sql ."</pre>");
-       // For production mode
-        //  die("Error on Query");
+      if (!$this->query_id) {
+        // El detalle queda en el log del servidor; al usuario no se le muestra
+        // la consulta ni la estructura de la base de datos (corrige H-07).
+        error_log('Error de base de datos: ' . $this->con->error . ' | Consulta: ' . $sql);
+        http_response_code(500);
+        die('Ocurrió un error al procesar la solicitud. Inténtalo de nuevo más tarde.');
+      }
 
        return $this->query_id;
 

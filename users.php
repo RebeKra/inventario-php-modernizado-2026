@@ -57,9 +57,7 @@
                 <a href="edit_user.php?id=<?php echo (int)$a_user['id'];?>" class="btn btn-xs btn-warning" data-toggle="tooltip" title="Edit">
                   <i class="glyphicon glyphicon-pencil"></i>
                </a>
-                <a href="delete_user.php?id=<?php echo (int)$a_user['id'];?>" class="btn btn-xs btn-danger" data-toggle="tooltip" title="Remove">
-                  <i class="glyphicon glyphicon-remove"></i>
-                </a>
+                <?php echo delete_button('delete_user.php', $a_user['id'], 'glyphicon-remove'); ?>
                 </div>
            </td>
           </tr>

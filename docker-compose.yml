@@ -9,6 +9,7 @@ services:
     command: --sql-mode=""
     volumes:
       - ./oswa_inv.sql:/docker-entrypoint-initdb.d/01-oswa_inv.sql
+      - ./database/migraciones/001_stock_como_entero.sql:/docker-entrypoint-initdb.d/02-migracion-001.sql
     ports:
       - "3306:3306"
     healthcheck:

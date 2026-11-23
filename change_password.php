@@ -13,13 +13,16 @@
 
     if(empty($errors)){
 
-             if(sha1($_POST['old-password']) !== current_user()['password'] ){
+             $contrasenas = new App\Security\Contrasenas();
+             if(!$contrasenas->verificar($_POST['old-password'], current_user()['password'])->valida){
                $session->msg('d', "Your old password not match");
                redirect('change_password.php',false);
              }
 
-            $id = (int)$_POST['id'];
-            $new = remove_junk($db->escape(sha1($_POST['new-password'])));
+            // Siempre el usuario de la sesión: antes se usaba el id enviado por el formulario
+            // y se podía cambiar la contraseña de otra persona (corrige H-11).
+            $id = (int)current_user()['id'];
+            $new = $db->escape($contrasenas->hash($_POST['new-password']));
             $sql = "UPDATE users SET password ='{$new}' WHERE id='{$db->escape($id)}'";
             $result = $db->query($sql);
                 if($result && $db->affected_rows() === 1):
@@ -43,6 +46,7 @@
      </div>
      <?php echo display_msg($msg); ?>
       <form method="post" action="change_password.php" class="clearfix">
+            <?php echo csrf_field(); ?>
         <div class="form-group">
               <label for="newPassword" class="control-label">New password</label>
               <input type="password" class="form-control" name="new-password" placeholder="New password">

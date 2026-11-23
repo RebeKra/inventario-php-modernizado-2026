@@ -45,6 +45,7 @@
         </div>
         <div class="panel-body">
           <form method="post" action="categorie.php">
+            <?php echo csrf_field(); ?>
             <div class="form-group">
                 <input type="text" class="form-control" name="categorie-name" placeholder="Categorie Name">
             </div>
@@ -80,9 +81,7 @@
                         <a href="edit_categorie.php?id=<?php echo (int)$cat['id'];?>"  class="btn btn-xs btn-warning" data-toggle="tooltip" title="Edit">
                           <span class="glyphicon glyphicon-edit"></span>
                         </a>
-                        <a href="delete_categorie.php?id=<?php echo (int)$cat['id'];?>"  class="btn btn-xs btn-danger" data-toggle="tooltip" title="Remove">
-                          <span class="glyphicon glyphicon-trash"></span>
-                        </a>
+                        <?php echo delete_button('delete_categorie.php', $cat['id'], 'glyphicon-trash'); ?>
                       </div>
                     </td>
 

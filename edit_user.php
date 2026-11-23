@@ -46,8 +46,7 @@ if(isset($_POST['update-pass'])) {
   validate_fields($req_fields);
   if(empty($errors)){
            $id = (int)$e_user['id'];
-     $password = remove_junk($db->escape($_POST['password']));
-     $h_pass   = sha1($password);
+     $h_pass   = $db->escape((new App\Security\Contrasenas())->hash($_POST['password']));
           $sql = "UPDATE users SET password='{$h_pass}' WHERE id='{$db->escape($id)}'";
        $result = $db->query($sql);
         if($result && $db->affected_rows() === 1){
@@ -76,7 +75,8 @@ if(isset($_POST['update-pass'])) {
         </strong>
        </div>
        <div class="panel-body">
-          <form method="post" action="edit_user.php?id=<?php echo (int)$e_user['id'];?>" class="clearfix">
+          <form method="post" action="edit_user.php?id=<?php echo (int)$e_user['id'];?>
+            <?php echo csrf_field(); ?>" class="clearfix">
             <div class="form-group">
                   <label for="name" class="control-label">Name</label>
                   <input type="name" class="form-control" name="name" value="<?php echo remove_junk(ucwords($e_user['name'])); ?>">

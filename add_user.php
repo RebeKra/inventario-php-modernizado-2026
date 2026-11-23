@@ -14,9 +14,9 @@
    if(empty($errors)){
            $name   = remove_junk($db->escape($_POST['full-name']));
        $username   = remove_junk($db->escape($_POST['username']));
-       $password   = remove_junk($db->escape($_POST['password']));
+       $password   = $_POST['password'];
        $user_level = (int)$db->escape($_POST['level']);
-       $password = sha1($password);
+       $password = $db->escape((new App\Security\Contrasenas())->hash($password));
         $query = "INSERT INTO users (";
         $query .="name,username,password,user_level,status";
         $query .=") VALUES (";
@@ -50,6 +50,7 @@
       <div class="panel-body">
         <div class="col-md-6">
           <form method="post" action="add_user.php">
+            <?php echo csrf_field(); ?>
             <div class="form-group">
                 <label for="name">Name</label>
                 <input type="text" class="form-control" name="full-name" placeholder="Full Name">

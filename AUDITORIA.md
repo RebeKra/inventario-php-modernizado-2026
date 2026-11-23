@@ -9,18 +9,22 @@ actual; en la Fase 2 esas pruebas se actualizarán para exigir el comportamiento
 
 ## Resumen
 
-| ID | Hallazgo | Tipo | Gravedad |
-|---|---|---|---|
-| H-01 | Contraseñas guardadas con SHA-1 sin sal 🧪 | Seguridad | 🔴 Crítica |
-| H-02 | Consultas SQL armadas con concatenación y escapado manual | Seguridad | 🟠 Alta |
-| H-03 | Sin protección CSRF: un enlace GET elimina productos, ventas y usuarios 🧪 | Seguridad | 🟠 Alta |
-| H-04 | Se puede vender más de lo que hay en stock; el stock queda negativo 🧪 | Negocio | 🟠 Alta |
-| H-05 | El total de la venta lo define el navegador y el servidor no lo recalcula 🧪 | Negocio / Seguridad | 🟠 Alta |
-| H-06 | La sesión no se regenera al iniciar sesión (fijación de sesión) | Seguridad | 🟡 Media |
-| H-07 | Los errores de base de datos muestran la consulta SQL completa al usuario | Seguridad | 🟡 Media |
-| H-08 | Venta y descuento de stock sin transacción | Integridad de datos | 🟡 Media |
-| H-09 | El stock se guarda como texto (`VARCHAR`) | Modelo de datos | 🟡 Media |
-| H-10 | SQL, lógica de negocio y HTML mezclados; estado global en todo el sistema | Mantenibilidad | 🔵 Baja |
+| ID | Hallazgo | Tipo | Gravedad | Estado |
+|---|---|---|---|---|
+| H-01 | Contraseñas guardadas con SHA-1 sin sal 🧪 | Seguridad | 🔴 Crítica | ✅ Corregido (Fase 2) |
+| H-02 | Consultas SQL armadas con concatenación y escapado manual | Seguridad | 🟠 Alta | 🟡 Parcial: el código nuevo usa consultas preparadas |
+| H-03 | Sin protección CSRF: un enlace GET elimina productos, ventas y usuarios 🧪 | Seguridad | 🟠 Alta | ✅ Corregido (Fase 2) |
+| H-04 | Se puede vender más de lo que hay en stock; el stock queda negativo 🧪 | Negocio | 🟠 Alta | ✅ Corregido (Fase 2) |
+| H-05 | El total de la venta lo define el navegador y el servidor no lo recalcula 🧪 | Negocio / Seguridad | 🟠 Alta | ✅ Corregido (Fase 2) |
+| H-06 | La sesión no se regenera al iniciar sesión (fijación de sesión) 🧪 | Seguridad | 🟡 Media | ✅ Corregido (Fase 2) |
+| H-07 | Los errores de base de datos muestran la consulta SQL completa al usuario | Seguridad | 🟡 Media | ✅ Corregido (Fase 2) |
+| H-08 | Venta y descuento de stock sin transacción | Integridad de datos | 🟡 Media | ✅ Corregido (Fase 2) |
+| H-09 | El stock se guarda como texto (`VARCHAR`) | Modelo de datos | 🟡 Media | ✅ Corregido con una migración (Fase 2) |
+| H-10 | SQL, lógica de negocio y HTML mezclados; estado global en todo el sistema | Mantenibilidad | 🔵 Baja | 🟡 En curso: capas nuevas en `src/` |
+| H-11 | Cambio de contraseña de otro usuario modificando el `id` del formulario 🧪 | Seguridad | 🔴 Crítica | ✅ Corregido (Fase 2) |
+| H-12 | Editar una venta no ajusta el stock y acepta el precio del navegador | Negocio | 🟠 Alta | ⏳ Pendiente (Fase 3) |
+
+H-11 y H-12 se encontraron durante la Fase 2, al revisar en detalle los archivos que había que modificar.
 
 ## Detalle
 
@@ -81,6 +85,19 @@ actual; en la Fase 2 esas pruebas se actualizarán para exigir el comportamiento
 - SQL, reglas de negocio y HTML en el mismo archivo; `global $db` y `global $session` en todo el código;
   funciones duplicadas (`authenticate` / `authenticate_v2`); sin pruebas automatizadas.
 - **Solución propuesta:** separar en capas (repositorios, servicios y controladores) con inyección de dependencias.
+
+### H-11 · Cambio de contraseña de otro usuario 🔴
+- **Dónde:** `change_password.php` usaba `$id = (int)$_POST['id']`, un campo oculto del formulario.
+- **Problema:** cualquier usuario con sesión podía cambiar la contraseña del administrador
+  editando ese campo (referencia directa insegura a objetos, IDOR).
+- **Prueba:** `AutenticacionTest::testNoSePuedeCambiarLaContrasenaDeOtroUsuario`.
+- **Solución aplicada:** se usa siempre el id del usuario de la sesión.
+
+### H-12 · Edición de ventas 🟠
+- **Dónde:** `edit_sale.php`.
+- **Problema:** cambiar la cantidad de una venta no devuelve ni descuenta stock, y el precio
+  vuelve a tomarse del formulario.
+- **Plan:** se resolverá al migrar el módulo de ventas, reutilizando `RegistroDeVentas`.
 
 ## Estrategia
 

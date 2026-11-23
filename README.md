@@ -8,7 +8,7 @@ El objetivo es mostrar cómo se trabaja con código legado que no escribiste: en
 protegerlo con pruebas, corregirlo y migrarlo de forma gradual a una arquitectura moderna con
 **Python (FastAPI)** y **React + TypeScript**, sin detener el sistema.
 
-> 🚧 Proyecto en progreso. Estado actual: **Fase 1, auditoría y pruebas de caracterización**.
+> 🚧 Proyecto en progreso. Estado actual: **Fase 2, correcciones de seguridad y lógica de negocio**.
 
 ## Hoja de ruta
 
@@ -16,20 +16,42 @@ protegerlo con pruebas, corregirlo y migrarlo de forma gradual a una arquitectur
 |---|---|---|
 | 0 | Sistema original, ejecutable con Docker | ✅ |
 | 1 | [Auditoría](AUDITORIA.md) y pruebas de caracterización con PHPUnit | ✅ |
-| 2 | Corrección de seguridad y lógica de negocio; refactor en capas | ⏳ |
+| 2 | Corrección de seguridad y lógica de negocio; primeras capas en `src/` | ✅ |
 | 3 | Migración del módulo de productos a FastAPI | ⏳ |
 | 4 | Nueva interfaz de productos en React + TypeScript | ⏳ |
 | 5 | Convivencia de ambos sistemas detrás de nginx | ⏳ |
 | 6 | Integración continua con GitHub Actions | ⏳ |
 
-## Hallazgos principales
+## Hallazgos y correcciones
 
-La [auditoría completa](AUDITORIA.md) detalla 10 hallazgos. Los más graves:
+La [auditoría completa](AUDITORIA.md) detalla 12 hallazgos y su estado. Los más graves, ya corregidos:
 
-- 🔴 Contraseñas guardadas con **SHA-1 sin sal**.
-- 🟠 **Sin protección CSRF**: un enlace GET borra productos, ventas y usuarios.
-- 🟠 El **total de la venta lo decide el navegador**: se pueden vender 3 baterías por Gs. 1.
-- 🟠 Se puede vender **más de lo que hay en stock**.
+| Antes | Después |
+|---|---|
+| 🔴 Contraseñas con **SHA-1 sin sal** | bcrypt, con **migración transparente** al iniciar sesión |
+| 🔴 Cualquier usuario podía **cambiar la contraseña de otro** | Se usa siempre el usuario de la sesión |
+| 🟠 **Sin CSRF**: un enlace GET borraba datos | Borrado solo por POST con token CSRF y confirmación |
+| 🟠 El **navegador decidía el precio**: 3 baterías por Gs. 1 | El total se calcula en el servidor |
+| 🟠 Se podía **vender más que el stock** | Descuento atómico (`WHERE quantity >= ?`) dentro de una transacción |
+
+## Arquitectura
+
+El código nuevo vive en `src/` y convive con el original: las páginas antiguas lo van
+usando de a poco, sin reescribir todo de golpe.
+
+```
+src/
+├── Database/   Conexion (consultas preparadas y transacciones)
+├── Security/   Contrasenas (bcrypt + migración de SHA-1), Csrf
+├── Auth/       Autenticacion + UsuarioRepositorio
+└── Ventas/     RegistroDeVentas (reglas de negocio) + repositorios
+```
+
+- **Las reglas de negocio no dependen de la base de datos:** `RegistroDeVentas` recibe interfaces
+  de repositorio, así que se prueba con versiones en memoria, sin MySQL.
+- **Las páginas antiguas solo delegan:** por ejemplo, `add_sale.php` ahora llama a
+  `RegistroDeVentas` en vez de armar el SQL a mano.
+- **Cambios de esquema versionados:** `database/migraciones/` (por ejemplo, el stock pasa de texto a entero).
 
 ## Cómo ejecutarlo
 
@@ -54,8 +76,11 @@ composer test
 ```
 
 ```
-OK (12 tests, 21 assertions)
+OK (27 tests, 52 assertions)
 ```
+
+- `tests/Unitarias`: reglas de negocio y autenticación, sin base de datos.
+- `tests/Caracterizacion`: el sistema completo por HTTP, como un navegador.
 
 ## Créditos
 

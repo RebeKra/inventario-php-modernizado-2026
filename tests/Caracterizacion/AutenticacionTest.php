@@ -43,13 +43,64 @@ final class AutenticacionTest extends PruebaDeCaracterizacion
     }
 
     /**
-     * COMPORTAMIENTO ACTUAL – hallazgo H-01 (ver AUDITORIA.md).
-     * Las contraseñas se guardan como SHA-1 sin sal. Esta prueba cambiará en la Fase 2.
+     * Hallazgo H-01 corregido: al iniciar sesión con una contraseña heredada (SHA-1),
+     * se vuelve a guardar con bcrypt sin que el usuario tenga que hacer nada.
      */
-    public function testLasContrasenasSeGuardanComoSha1SinSal(): void
+    public function testAlIniciarSesionLaContrasenaHeredadaSeMigraABcrypt(): void
     {
-        $usuario = TestDatabase::fetchOne("SELECT password FROM users WHERE username = 'admin'");
+        $this->assertSame(sha1('admin'), $this->hashDe('admin'));
 
-        $this->assertSame(sha1('admin'), $usuario['password']);
+        $this->navegador->iniciarSesion('admin', 'admin');
+
+        $hash = $this->hashDe('admin');
+        $this->assertStringStartsWith('$2y$', $hash);
+        $this->assertTrue(password_verify('admin', $hash));
+    }
+
+    public function testDespuesDeMigrarSePuedeSeguirIniciandoSesion(): void
+    {
+        $this->navegador->iniciarSesion('admin', 'admin');
+        $otroNavegador = new \Tests\Support\Navegador();
+
+        $respuesta = $otroNavegador->iniciarSesion('admin', 'admin');
+
+        $this->assertSame('home.php', $respuesta->location);
+    }
+
+    /** Hallazgo H-06 corregido: el identificador de sesión cambia al iniciar sesión. */
+    public function testElIdentificadorDeSesionCambiaAlIniciarSesion(): void
+    {
+        $this->navegador->get('/index.php');
+        $antes = $this->navegador->idDeSesion();
+
+        $this->navegador->iniciarSesion('admin', 'admin');
+
+        $this->assertNotNull($antes);
+        $this->assertNotSame($antes, $this->navegador->idDeSesion());
+    }
+
+    /**
+     * Hallazgo H-11 corregido: el formulario enviaba el id del usuario y se podía
+     * cambiar la contraseña de otra persona modificándolo.
+     */
+    public function testNoSePuedeCambiarLaContrasenaDeOtroUsuario(): void
+    {
+        $this->navegador->iniciarSesion('user', 'user');
+        $hashDelAdmin = $this->hashDe('admin');
+
+        $this->navegador->post('/change_password.php', [
+            'old-password' => 'user',
+            'new-password' => 'nueva-clave',
+            'id' => 1,
+            'update' => '',
+        ]);
+
+        $this->assertSame($hashDelAdmin, $this->hashDe('admin'));
+        $this->assertTrue(password_verify('nueva-clave', $this->hashDe('user')));
+    }
+
+    private function hashDe(string $usuario): string
+    {
+        return TestDatabase::fetchOne("SELECT password FROM users WHERE username = '$usuario'")['password'];
     }
 }

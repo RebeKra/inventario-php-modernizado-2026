@@ -33,6 +33,7 @@
             <span>All Photos</span>
             <div class="pull-right">
               <form class="form-inline" action="media.php" method="POST" enctype="multipart/form-data">
+            <?php echo csrf_field(); ?>
               <div class="form-group">
                 <div class="input-group">
                   <span class="input-group-btn">
@@ -70,9 +71,7 @@
                   <?php echo $media_file['file_type'];?>
                 </td>
                 <td class="text-center">
-                  <a href="delete_media.php?id=<?php echo (int) $media_file['id'];?>" class="btn btn-danger btn-xs"  title="Edit">
-                    <span class="glyphicon glyphicon-trash"></span>
-                  </a>
+                  <?php echo delete_button('delete_media.php', $media_file['id'], 'glyphicon-trash'); ?>
                 </td>
                </tr>
               <?php endforeach;?>

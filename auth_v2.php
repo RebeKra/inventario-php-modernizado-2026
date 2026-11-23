@@ -3,7 +3,7 @@
 $req_fields = array('username','password' );
 validate_fields($req_fields);
 $username = remove_junk($_POST['username']);
-$password = remove_junk($_POST['password']);
+$password = $_POST['password']; // la contraseña no se modifica: se compara su hash
 
   if(empty($errors)){
 

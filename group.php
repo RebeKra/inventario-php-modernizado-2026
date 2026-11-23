@@ -52,9 +52,7 @@
                 <a href="edit_group.php?id=<?php echo (int)$a_group['id'];?>" class="btn btn-xs btn-warning" data-toggle="tooltip" title="Edit">
                   <i class="glyphicon glyphicon-pencil"></i>
                </a>
-                <a href="delete_group.php?id=<?php echo (int)$a_group['id'];?>" class="btn btn-xs btn-danger" data-toggle="tooltip" title="Remove">
-                  <i class="glyphicon glyphicon-remove"></i>
-                </a>
+                <?php echo delete_button('delete_group.php', $a_group['id'], 'glyphicon-remove'); ?>
                 </div>
            </td>
           </tr>

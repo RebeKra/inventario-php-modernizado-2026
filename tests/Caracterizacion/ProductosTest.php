@@ -59,15 +59,32 @@ final class ProductosTest extends PruebaDeCaracterizacion
         $this->assertSame(2, (int) TestDatabase::fetchOne('SELECT COUNT(*) AS n FROM products')['n']);
     }
 
-    /**
-     * COMPORTAMIENTO ACTUAL – hallazgo H-03 (ver AUDITORIA.md).
-     * Un simple enlace GET elimina un producto: no hay protección CSRF ni confirmación.
-     */
-    public function testUnEnlaceGetEliminaUnProductoSinProteccionCsrf(): void
+    /** Hallazgo H-03 corregido: un enlace GET ya no elimina nada. */
+    public function testUnEnlaceGetYaNoEliminaUnProducto(): void
     {
         $this->comoAdministrador();
 
         $this->navegador->get('/delete_product.php?id=2');
+
+        $this->assertNotNull(TestDatabase::fetchOne('SELECT id FROM products WHERE id = 2'));
+    }
+
+    /** Hallazgo H-03 corregido: un formulario sin token CSRF (por ejemplo, desde otro sitio) se rechaza. */
+    public function testUnPostSinTokenCsrfSeRechaza(): void
+    {
+        $this->comoAdministrador();
+
+        $respuesta = $this->navegador->postSinToken('/delete_product.php', ['id' => 2]);
+
+        $this->assertSame(403, $respuesta->status);
+        $this->assertNotNull(TestDatabase::fetchOne('SELECT id FROM products WHERE id = 2'));
+    }
+
+    public function testElBotonEliminarConTokenCsrfEliminaElProducto(): void
+    {
+        $this->comoAdministrador();
+
+        $this->navegador->post('/delete_product.php', ['id' => 2], '/product.php');
 
         $this->assertNull(TestDatabase::fetchOne('SELECT id FROM products WHERE id = 2'));
     }

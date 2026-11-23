@@ -118,4 +118,33 @@ function randString($length = 5)
 }
 
 
+/*--------------------------------------------------------------*/
+/* Seguridad: token CSRF en formularios (H-03)
+/*--------------------------------------------------------------*/
+function csrf_field(){
+  return App\Security\Csrf::campo();
+}
+/*--------------------------------------------------------------*/
+/* Botón de borrado: un formulario POST con token CSRF y
+/* confirmación, en lugar de un enlace GET (H-03)
+/*--------------------------------------------------------------*/
+function delete_button($action, $id, $icon = 'glyphicon-trash', $title = 'Eliminar'){
+  $html  = '<form method="post" action="'.$action.'" style="display:inline" onsubmit="return confirm(\'¿Seguro que deseas eliminarlo?\');">';
+  $html .= csrf_field();
+  $html .= '<input type="hidden" name="id" value="'.(int)$id.'">';
+  $html .= '<button type="submit" class="btn btn-danger btn-xs" title="'.$title.'" data-toggle="tooltip">';
+  $html .= '<span class="glyphicon '.$icon.'"></span></button>';
+  $html .= '</form>';
+  return $html;
+}
+/*--------------------------------------------------------------*/
+/* Las acciones que modifican datos solo aceptan POST (H-03)
+/*--------------------------------------------------------------*/
+function require_post($redirect_to){
+  global $session;
+  if($_SERVER['REQUEST_METHOD'] !== 'POST'){
+    $session->msg('d', 'Acción no permitida.');
+    redirect($redirect_to, false);
+  }
+}
 ?>

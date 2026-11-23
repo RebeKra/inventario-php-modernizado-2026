@@ -34,31 +34,26 @@ final class VentasTest extends PruebaDeCaracterizacion
         $this->assertSame('225000.00', $venta['price']);
     }
 
-    /**
-     * COMPORTAMIENTO ACTUAL – hallazgo H-04 (ver AUDITORIA.md).
-     * Se puede vender más de lo que hay en stock y el stock queda negativo.
-     */
-    public function testUnaVentaMayorAlStockDejaElStockNegativo(): void
+    /** Hallazgo H-04 corregido: no se puede vender más de lo que hay en stock. */
+    public function testUnaVentaMayorAlStockSeRechazaYNoCambiaNada(): void
     {
         $this->comoAdministrador();
 
         $this->registrarVenta(2, 10, '8900000');
 
-        $this->assertSame(-6, $this->stockDelProducto(2));
+        $this->assertSame(4, $this->stockDelProducto(2));
+        $this->assertNull(TestDatabase::fetchOne('SELECT id FROM sales WHERE product_id = 2'));
+        $this->assertStringContainsString('Stock insuficiente', $this->navegador->get('/add_sale.php')->body);
     }
 
-    /**
-     * COMPORTAMIENTO ACTUAL – hallazgo H-05 (ver AUDITORIA.md).
-     * El total de la venta lo envía el navegador y el servidor lo guarda sin recalcularlo:
-     * se pueden vender 3 baterías por Gs. 1.
-     */
-    public function testElTotalDeLaVentaLoDecideElNavegador(): void
+    /** Hallazgo H-05 corregido: el total lo calcula el servidor con el precio guardado. */
+    public function testElTotalLoCalculaElServidorAunqueElNavegadorEnvieOtro(): void
     {
         $this->comoAdministrador();
 
         $this->registrarVenta(2, 3, '1');
 
         $venta = TestDatabase::fetchOne('SELECT price FROM sales WHERE product_id = 2');
-        $this->assertSame('1.00', $venta['price']);
+        $this->assertSame('2670000.00', $venta['price']);
     }
 }

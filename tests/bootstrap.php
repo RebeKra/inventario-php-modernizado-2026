@@ -16,6 +16,8 @@ if (file_exists($autoload)) {
     spl_autoload_register(function (string $class): void {
         if (str_starts_with($class, 'Tests\\')) {
             require __DIR__ . '/' . str_replace('\\', '/', substr($class, 6)) . '.php';
+        } elseif (str_starts_with($class, 'App\\')) {
+            require __DIR__ . '/../src/' . str_replace('\\', '/', substr($class, 4)) . '.php';
         }
     });
 }

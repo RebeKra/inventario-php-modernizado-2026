@@ -1,3 +1,8 @@
+// Las peticiones AJAX envían el token CSRF en una cabecera (H-03).
+$.ajaxSetup({
+  headers: { 'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content') }
+});
+
 
 function suggetion() {
 

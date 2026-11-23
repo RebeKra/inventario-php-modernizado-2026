@@ -7,33 +7,28 @@
 <?php
 
   if(isset($_POST['add_sale'])){
-    $req_fields = array('s_id','quantity','price','total', 'date' );
+    $req_fields = array('s_id','quantity' );
     validate_fields($req_fields);
-        if(empty($errors)){
-          $p_id      = $db->escape((int)$_POST['s_id']);
-          $s_qty     = $db->escape((int)$_POST['quantity']);
-          $s_total   = $db->escape($_POST['total']);
-          $date      = $db->escape($_POST['date']);
-          $s_date    = make_date();
-
-          $sql  = "INSERT INTO sales (";
-          $sql .= " product_id,qty,price,date";
-          $sql .= ") VALUES (";
-          $sql .= "'{$p_id}','{$s_qty}','{$s_total}','{$s_date}'";
-          $sql .= ")";
-
-                if($db->query($sql)){
-                  update_product_qty($s_qty,$p_id);
-                  $session->msg('s',"Sale added. ");
-                  redirect('add_sale.php', false);
-                } else {
-                  $session->msg('d',' Sorry failed to add!');
-                  redirect('add_sale.php', false);
-                }
-        } else {
-           $session->msg("d", $errors);
-           redirect('add_sale.php',false);
-        }
+    if(empty($errors)){
+      // Las reglas de la venta viven en src/Ventas/RegistroDeVentas.php:
+      // el total se calcula en el servidor, se valida el stock y todo
+      // ocurre en una transacción (corrige H-04, H-05 y H-08).
+      $registro = new App\Ventas\RegistroDeVentas(
+        new App\Ventas\ProductoRepositorioMysql($conexion),
+        new App\Ventas\VentaRepositorioMysql($conexion),
+        $conexion
+      );
+      try {
+        $venta = $registro->registrar((int)$_POST['s_id'], (int)$_POST['quantity'], new DateTimeImmutable());
+        $session->msg('s', "Sale added. ");
+      } catch (DomainException $e) {
+        $session->msg('d', $e->getMessage());
+      }
+      redirect('add_sale.php', false);
+    } else {
+      $session->msg("d", $errors);
+      redirect('add_sale.php',false);
+    }
   }
 
 ?>
@@ -42,6 +37,7 @@
   <div class="col-md-6">
     <?php echo display_msg($msg); ?>
     <form method="post" action="ajax.php" autocomplete="off" id="sug-form">
+            <?php echo csrf_field(); ?>
         <div class="form-group">
           <div class="input-group">
             <span class="input-group-btn">
@@ -66,6 +62,7 @@
       </div>
       <div class="panel-body">
         <form method="post" action="add_sale.php">
+            <?php echo csrf_field(); ?>
          <table class="table table-bordered">
            <thead>
             <th> Item </th>

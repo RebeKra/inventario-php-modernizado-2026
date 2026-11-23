@@ -62,6 +62,7 @@
         <div class="panel-body">
          <div class="col-md-12">
           <form method="post" action="add_product.php" class="clearfix">
+            <?php echo csrf_field(); ?>
               <div class="form-group">
                 <div class="input-group">
                   <span class="input-group-addon">

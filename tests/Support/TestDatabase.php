@@ -34,7 +34,12 @@ final class TestDatabase
         $db->query("CREATE DATABASE `$name` CHARACTER SET utf8");
         $db->select_db($name);
 
-        foreach ([__DIR__ . '/../../oswa_inv.sql', __DIR__ . '/../fixtures.sql'] as $file) {
+        $archivos = array_merge(
+            [__DIR__ . '/../../oswa_inv.sql'],
+            glob(__DIR__ . '/../../database/migraciones/*.sql'),
+            [__DIR__ . '/../fixtures.sql']
+        );
+        foreach ($archivos as $file) {
             $db->multi_query(file_get_contents($file));
             while ($db->more_results() && $db->next_result()) {
                 // Consumir todos los resultados de la carga.

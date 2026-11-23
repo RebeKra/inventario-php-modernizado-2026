@@ -26,15 +26,46 @@ final class Navegador
         return $this->request('GET', $path);
     }
 
-    /** @param array<string, scalar> $data */
-    public function post(string $path, array $data): Respuesta
+    /**
+     * Envía un formulario como lo haría un navegador: primero abre la página del
+     * formulario para obtener el token CSRF y después lo envía junto con los datos.
+     *
+     * @param array<string, scalar> $data
+     */
+    public function post(string $path, array $data, ?string $paginaDelFormulario = null): Respuesta
+    {
+        $token = $this->tokenCsrf($paginaDelFormulario ?? $path);
+        return $this->request('POST', $path, $data + ['csrf_token' => $token]);
+    }
+
+    /**
+     * Envía un formulario sin token, como lo haría un sitio malicioso.
+     *
+     * @param array<string, scalar> $data
+     */
+    public function postSinToken(string $path, array $data): Respuesta
     {
         return $this->request('POST', $path, $data);
     }
 
     public function iniciarSesion(string $usuario, string $clave): Respuesta
     {
-        return $this->post('/auth.php', ['username' => $usuario, 'password' => $clave]);
+        return $this->post('/auth.php', ['username' => $usuario, 'password' => $clave], '/index.php');
+    }
+
+    public function tokenCsrf(string $pagina): string
+    {
+        $html = $this->get($pagina)->body;
+        if (!preg_match('/name="csrf_token" value="([a-f0-9]+)"/', $html, $m)) {
+            throw new \RuntimeException("No se encontró el token CSRF en $pagina");
+        }
+        return $m[1];
+    }
+
+    public function idDeSesion(): ?string
+    {
+        $cookies = (string) file_get_contents($this->cookieFile);
+        return preg_match('/PHPSESSID\s+(\S+)/', $cookies, $m) ? $m[1] : null;
     }
 
     /** @param array<string, scalar> $data */
