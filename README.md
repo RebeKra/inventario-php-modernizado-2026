@@ -1,5 +1,11 @@
 # Inventario PHP modernizado
 
+[![CI](https://github.com/RebeKra/inventario-php-modernizado-2026/actions/workflows/ci.yml/badge.svg)](https://github.com/RebeKra/inventario-php-modernizado-2026/actions/workflows/ci.yml)
+![PHP](https://img.shields.io/badge/PHP-8.3-777BB4?logo=php&logoColor=white)
+![Python](https://img.shields.io/badge/Python-FastAPI-009688?logo=fastapi&logoColor=white)
+![React](https://img.shields.io/badge/React-TypeScript-3178C6?logo=typescript&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql&logoColor=white)
+
 Modernización de un sistema real de inventario y ventas escrito en **PHP plano + MySQL** en 2015:
 [OSWA-INV](https://github.com/siamon123/warehouse-inventory-system), de Siamon Hasan (licencia MIT),
 sin mantenimiento desde 2017.
@@ -8,7 +14,8 @@ El objetivo es mostrar cómo se trabaja con código legado que no escribiste: en
 protegerlo con pruebas, corregirlo y migrarlo de forma gradual a una arquitectura moderna con
 **Python (FastAPI)** y **React + TypeScript**, sin detener el sistema.
 
-> 🚧 Proyecto en progreso. Estado actual: **Fase 5, sistema viejo y nuevo funcionando juntos detrás de nginx**.
+**Resultado:** 14 problemas encontrados y documentados (3 críticos), 11 corregidos, el módulo de productos
+migrado a Python + React sin detener el sistema, y 65 pruebas automáticas que corren en cada cambio.
 
 ## Hoja de ruta
 
@@ -20,7 +27,7 @@ protegerlo con pruebas, corregirlo y migrarlo de forma gradual a una arquitectur
 | 3 | Migración del módulo de productos a FastAPI | ✅ |
 | 4 | Nueva interfaz de productos en React + TypeScript | ✅ |
 | 5 | Convivencia de ambos sistemas detrás de nginx | ✅ |
-| 6 | Integración continua con GitHub Actions | ⏳ |
+| 6 | Integración continua con GitHub Actions | ✅ |
 
 ## Hallazgos y correcciones
 
@@ -197,6 +204,27 @@ npm test
 ```
 Tests  15 passed (15)
 ```
+
+## Integración continua
+
+En cada `push` y pull request, [GitHub Actions](.github/workflows/ci.yml) ejecuta en paralelo:
+
+| Trabajo | Qué verifica |
+|---|---|
+| **PHP** | 34 pruebas con PHPUnit contra MySQL 8 (unitarias y de caracterización) |
+| **Python** | 16 pruebas con pytest de la API contra MySQL 8 |
+| **React** | Tipos de TypeScript, 15 pruebas con Vitest y compilación de producción |
+| **Sistema completo** | Levanta todo con Docker Compose y ejecuta una [prueba de humo](scripts/prueba-humo.sh) a través de nginx: login, sesión compartida, CSRF, redirecciones y archivos bloqueados |
+
+El último trabajo solo corre si los tres primeros pasan.
+
+## Próximos pasos
+
+- **Migrar el módulo de ventas** reutilizando `RegistroDeVentas`, y con él corregir H-12 (editar una venta no ajusta el stock).
+- **Baja lógica de productos** (inactivo) en lugar de borrarlos, y quitar el `ON DELETE CASCADE` del esquema (H-13).
+- **Retirar las páginas viejas de productos**, que hoy solo redirigen a la interfaz nueva.
+- **Sacar el código de la carpeta pública** y dejar un único punto de entrada en PHP (H-14).
+- **Consultas preparadas en todo el código heredado** que todavía arma SQL a mano (H-02).
 
 ## Créditos
 
