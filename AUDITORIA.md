@@ -24,9 +24,11 @@ actual; en la Fase 2 esas pruebas se actualizarán para exigir el comportamiento
 | H-11 | Cambio de contraseña de otro usuario modificando el `id` del formulario 🧪 | Seguridad | 🔴 Crítica | ✅ Corregido (Fase 2) |
 | H-12 | Editar una venta no ajusta el stock y acepta el precio del navegador | Negocio | 🟠 Alta | ⏳ Pendiente (migración del módulo de ventas) |
 | H-13 | Eliminar un producto borra en cascada todo su historial de ventas 🧪 | Integridad de datos | 🟠 Alta | ✅ Corregido (Fase 3) |
+| H-14 | El volcado de la base (`oswa_inv.sql`, con los hashes de las contraseñas) y los archivos internos se pueden descargar desde el navegador | Seguridad | 🔴 Crítica | ✅ Corregido en la puerta de entrada (Fase 5) |
 
 H-11 y H-12 se encontraron durante la Fase 2, al revisar en detalle los archivos que había que modificar.
 H-13 se encontró en la Fase 3, al mapear el esquema de la base para la API nueva.
+H-14 se encontró en la Fase 5, al definir qué rutas debía publicar la puerta de entrada.
 
 ## Detalle
 
@@ -108,6 +110,14 @@ H-13 se encontró en la Fase 3, al mapear el esquema de la base para la API nuev
   `test_no_elimina_un_producto_con_ventas_para_no_perder_el_historial` (API).
 - **Solución aplicada:** ambos sistemas rechazan eliminar un producto con ventas. A futuro conviene
   reemplazar el borrado por una baja lógica (producto inactivo) y quitar la cascada del esquema.
+
+### H-14 · Archivos privados publicados 🔴
+- **Dónde:** el sistema se instala en la raíz del sitio web, junto con `oswa_inv.sql`, `includes/` y la configuración.
+- **Problema:** cualquiera podía descargar `http://sitio/oswa_inv.sql`, con la estructura de la base y los
+  hashes SHA-1 de las contraseñas, que además se descifran fácilmente (H-01).
+- **Solución aplicada:** nginx solo publica lo necesario y responde 404 a volcados SQL, carpetas internas,
+  documentación, configuración y archivos ocultos (`gateway/nginx.conf`). A futuro conviene mover el código
+  fuera de la carpeta pública y dejar solo un punto de entrada.
 
 ## Estrategia
 

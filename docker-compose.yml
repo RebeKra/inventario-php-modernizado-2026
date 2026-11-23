@@ -17,15 +17,13 @@ services:
       interval: 5s
       retries: 15
 
-  app:
+  php-app:
     build: .
     environment:
       DB_HOST: db
       DB_USER: app
       DB_PASS: app
       DB_NAME: oswa_inv
-    ports:
-      - "8080:80"
     depends_on:
       db:
         condition: service_healthy
@@ -37,8 +35,17 @@ services:
       DB_USER: app
       DB_PASS: app
       DB_NAME: oswa_inv
-    ports:
-      - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
+
+  # Única entrada pública: enruta entre el sistema PHP y los módulos nuevos.
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - php-app
+      - api

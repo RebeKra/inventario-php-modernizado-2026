@@ -5,6 +5,7 @@ import type {
   Producto,
   ProductoEntrada,
 } from "../tipos";
+import { irAlLogin } from "./navegacion";
 
 const BASE = "/api/v2";
 
@@ -53,6 +54,12 @@ async function pedir<T>(ruta: string, opciones: RequestInit = {}): Promise<T> {
   });
 
   if (respuesta.status === 204) return undefined as T;
+
+  // La sesión se maneja en el sistema PHP: si expiró, se vuelve a su login.
+  if (respuesta.status === 401) {
+    irAlLogin();
+    throw new ErrorDeApi(401, "Tu sesión expiró. Vuelve a iniciar sesión.");
+  }
 
   const cuerpo = await respuesta.json().catch(() => null);
   if (!respuesta.ok) throw convertirError(respuesta.status, cuerpo);

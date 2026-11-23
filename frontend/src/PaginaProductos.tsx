@@ -10,6 +10,7 @@ import {
 import { FormularioProducto } from "./componentes/FormularioProducto";
 import { Paginacion } from "./componentes/Paginacion";
 import { TablaProductos } from "./componentes/TablaProductos";
+import { URL_SISTEMA } from "./api/navegacion";
 import { useDiferido } from "./hooks/useDiferido";
 import type { Categoria, PaginaDeProductos, Producto, ProductoEntrada } from "./tipos";
 
@@ -82,6 +83,9 @@ export function PaginaProductos() {
     <main className="mx-auto max-w-6xl space-y-6 p-6">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
+          <a href={URL_SISTEMA} className="text-sm text-indigo-700 hover:underline">
+            ← Volver al sistema
+          </a>
           <h1 className="text-2xl font-bold text-slate-900">Productos</h1>
           <p className="text-sm text-slate-500">Módulo migrado a React + FastAPI</p>
         </div>

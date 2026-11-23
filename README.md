@@ -8,7 +8,7 @@ El objetivo es mostrar cómo se trabaja con código legado que no escribiste: en
 protegerlo con pruebas, corregirlo y migrarlo de forma gradual a una arquitectura moderna con
 **Python (FastAPI)** y **React + TypeScript**, sin detener el sistema.
 
-> 🚧 Proyecto en progreso. Estado actual: **Fase 4, nueva interfaz de productos en React + TypeScript**.
+> 🚧 Proyecto en progreso. Estado actual: **Fase 5, sistema viejo y nuevo funcionando juntos detrás de nginx**.
 
 ## Hoja de ruta
 
@@ -19,12 +19,12 @@ protegerlo con pruebas, corregirlo y migrarlo de forma gradual a una arquitectur
 | 2 | Corrección de seguridad y lógica de negocio; primeras capas en `src/` | ✅ |
 | 3 | Migración del módulo de productos a FastAPI | ✅ |
 | 4 | Nueva interfaz de productos en React + TypeScript | ✅ |
-| 5 | Convivencia de ambos sistemas detrás de nginx | ⏳ |
+| 5 | Convivencia de ambos sistemas detrás de nginx | ✅ |
 | 6 | Integración continua con GitHub Actions | ⏳ |
 
 ## Hallazgos y correcciones
 
-La [auditoría completa](AUDITORIA.md) detalla 13 hallazgos y su estado. Los más graves, ya corregidos:
+La [auditoría completa](AUDITORIA.md) detalla 14 hallazgos y su estado. Los más graves, ya corregidos:
 
 | Antes | Después |
 |---|---|
@@ -78,6 +78,28 @@ api/app/
 └── modelos.py    Mapeo ORM (SQLAlchemy) sobre las tablas existentes
 ```
 
+## Arquitectura: el sistema viejo y el nuevo, juntos
+
+```mermaid
+flowchart LR
+    U[Navegador] --> N[nginx<br/>puerta de entrada]
+    N -- "/productos/" --> R[Interfaz React]
+    N -- "/api/v2/" --> F[API FastAPI]
+    N -- "todo lo demás" --> P[Sistema PHP]
+    N -. "¿sesión válida?<br/>auth_request" .-> P
+    F --> D[(MySQL)]
+    P --> D
+```
+
+- **Una sola dirección para todo:** el usuario no nota qué parte es vieja y cuál es nueva.
+- **Un solo inicio de sesión:** antes de llegar a la API o a la interfaz nueva, nginx le pregunta al
+  sistema PHP si la sesión es válida (`auth_request` → `api_sesion.php`). No se duplican usuarios ni contraseñas.
+- **CSRF también en la API:** el sistema PHP publica el token en la cookie `XSRF-TOKEN`; la interfaz React lo
+  envía en la cabecera `X-CSRF-Token` y la verificación de sesión lo exige en cada modificación.
+- **Las páginas viejas redirigen a las nuevas:** `product.php`, `add_product.php` y `edit_product.php` llevan a `/productos/`.
+  Así se "estrangula" el módulo viejo sin romper enlaces ni favoritos.
+- **Solo se publica lo necesario:** el volcado de la base y los archivos internos ya no se pueden descargar (H-14).
+
 ## Interfaz de productos (React + TypeScript)
 
 ![Listado de productos](docs/capturas/productos-lista.png)
@@ -115,7 +137,8 @@ frontend/src/
 | **Importes como texto decimal** (`"890000.00"`) en el JSON | Evita los errores de redondeo de los números con coma flotante | El cliente debe convertirlos para hacer cálculos |
 | **Las mismas pruebas de datos** para PHP y Python | Garantiza que ambos sistemas funcionan sobre el mismo esquema | Un cambio en los datos de prueba afecta a las dos suites |
 | **Formato de importes con texto y `BigInt`** en el frontend | Los guaraníes no tienen decimales y los importes grandes no pierden precisión | Hay que convertir explícitamente si se necesitan cálculos |
-| **Autenticación en la puerta de entrada** (Fase 5) | La sesión vive en PHP: nginx la verificará antes de llegar a la API, sin duplicar el login | Mientras tanto, la API no debe exponerse sin el proxy |
+| **Autenticación en la puerta de entrada** (`auth_request`) | La sesión vive en PHP: nginx la verifica antes de llegar a la API, sin duplicar el login | Cada petición a la API hace una consulta extra a PHP; la API nunca debe exponerse sin el proxy |
+| **Redirigir las páginas viejas** en lugar de borrarlas | Los enlaces y favoritos siguen funcionando y se puede volver atrás rápido | El código viejo de productos sigue en el repositorio hasta retirarlo |
 
 ## Cómo ejecutarlo
 
@@ -123,8 +146,11 @@ frontend/src/
 docker compose up --build
 ```
 
-- Sistema PHP: http://localhost:8080 (usuario `admin`, contraseña `admin`)
-- API de productos: http://localhost:8000/api/v2/docs
+Todo entra por la puerta de entrada en http://localhost:8080:
+
+- Sistema: http://localhost:8080 (usuario `admin`, contraseña `admin`)
+- Productos (interfaz nueva): http://localhost:8080/productos/
+- Documentación de la API: http://localhost:8080/api/v2/docs (requiere haber iniciado sesión)
 - Interfaz nueva (modo desarrollo): `cd frontend && npm install && npm run dev` → http://localhost:5173/productos/
 
 ## Pruebas
@@ -142,7 +168,7 @@ composer test
 ```
 
 ```
-OK (28 tests, 54 assertions)
+OK (34 tests, 61 assertions)
 ```
 
 - `tests/Unitarias`: reglas de negocio y autenticación, sin base de datos.
@@ -169,7 +195,7 @@ npm test
 ```
 
 ```
-Tests  14 passed (14)
+Tests  15 passed (15)
 ```
 
 ## Créditos

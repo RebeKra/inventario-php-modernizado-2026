@@ -21,9 +21,10 @@ final class Navegador
         @unlink($this->cookieFile);
     }
 
-    public function get(string $path): Respuesta
+    /** @param array<string, string> $cabeceras */
+    public function get(string $path, array $cabeceras = []): Respuesta
     {
-        return $this->request('GET', $path);
+        return $this->request('GET', $path, [], $cabeceras);
     }
 
     /**
@@ -62,14 +63,23 @@ final class Navegador
         return $m[1];
     }
 
+    public function cookie(string $nombre): ?string
+    {
+        $cookies = (string) file_get_contents($this->cookieFile);
+        return preg_match('/\t' . preg_quote($nombre, '/') . '\t(\S+)/', $cookies, $m) ? $m[1] : null;
+    }
+
     public function idDeSesion(): ?string
     {
         $cookies = (string) file_get_contents($this->cookieFile);
         return preg_match('/PHPSESSID\s+(\S+)/', $cookies, $m) ? $m[1] : null;
     }
 
-    /** @param array<string, scalar> $data */
-    private function request(string $method, string $path, array $data = []): Respuesta
+    /**
+     * @param array<string, scalar> $data
+     * @param array<string, string> $cabeceras
+     */
+    private function request(string $method, string $path, array $data = [], array $cabeceras = []): Respuesta
     {
         $ch = curl_init(TestServer::baseUrl() . $path);
         curl_setopt_array($ch, [
@@ -79,6 +89,7 @@ final class Navegador
             CURLOPT_COOKIEFILE => $this->cookieFile,
             CURLOPT_COOKIEJAR => $this->cookieFile,
             CURLOPT_PROXY => '',
+            CURLOPT_HTTPHEADER => array_map(fn ($k, $v) => "$k: $v", array_keys($cabeceras), $cabeceras),
         ]);
         if ($method === 'POST') {
             curl_setopt($ch, CURLOPT_POST, true);

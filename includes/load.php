@@ -33,5 +33,6 @@ $conexion = new App\Database\Conexion($db->conexion());
 
 // Toda petición POST debe traer un token CSRF válido (corrige H-03).
 App\Security\Csrf::protegerPeticion();
+App\Security\Csrf::publicarCookie();
 
 ?>

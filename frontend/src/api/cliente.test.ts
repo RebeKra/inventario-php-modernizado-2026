@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { crearProducto, ErrorDeApi, listarProductos } from "./cliente";
+import { irAlLogin } from "./navegacion";
+
+vi.mock("./navegacion", () => ({ irAlLogin: vi.fn() }));
 
 function respuesta(status: number, cuerpo: unknown) {
   return new Response(JSON.stringify(cuerpo), { status, headers: { "Content-Type": "application/json" } });
@@ -29,6 +32,13 @@ describe("cliente de la API", () => {
 
     const cabeceras = fetch.mock.calls[0][1].headers as Headers;
     expect(cabeceras.get("X-CSRF-Token")).toBe("abc123");
+  });
+
+  it("si la sesión expiró, lleva al login del sistema", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 401 })));
+
+    await expect(listarProductos()).rejects.toMatchObject({ status: 401 });
+    expect(irAlLogin).toHaveBeenCalled();
   });
 
   it("convierte los errores de negocio en un mensaje legible", async () => {

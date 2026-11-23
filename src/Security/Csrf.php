@@ -30,6 +30,24 @@ final class Csrf
     }
 
     /**
+     * Publica el token en la cookie XSRF-TOKEN para que la interfaz en React pueda
+     * leerlo y enviarlo en la cabecera X-CSRF-Token. La cookie no da acceso por sí
+     * sola: otro sitio no puede leerla, y sin la cabecera la petición se rechaza.
+     */
+    public static function publicarCookie(): void
+    {
+        if (headers_sent() || ($_COOKIE['XSRF-TOKEN'] ?? null) === self::token()) {
+            return;
+        }
+        setcookie('XSRF-TOKEN', self::token(), [
+            'path' => '/',
+            'samesite' => 'Strict',
+            'secure' => !empty($_SERVER['HTTPS']),
+            'httponly' => false,
+        ]);
+    }
+
+    /**
      * Rechaza cualquier petición POST sin un token válido.
      * El token puede llegar en el formulario o en la cabecera X-CSRF-Token (peticiones AJAX).
      */
