@@ -1,48 +1,63 @@
-## Oswa - inv
+# Inventario PHP modernizado
 
+Modernización de un sistema real de inventario y ventas escrito en **PHP plano + MySQL** en 2015:
+[OSWA-INV](https://github.com/siamon123/warehouse-inventory-system), de Siamon Hasan (licencia MIT),
+sin mantenimiento desde 2017.
 
-![OSWA-INV v2 image](https://scontent-iad3-1.xx.fbcdn.net/v/t31.0-8/12045296_896994067005023_5505146103193104549_o.jpg?oh=4afd029c1486604d29f672d76becb8bc&oe=5921F70A " Warehouse inventory system ")
-#Warehouse inventory system
-- - - -
+El objetivo es mostrar cómo se trabaja con código legado que no escribiste: entenderlo, auditarlo,
+protegerlo con pruebas, corregirlo y migrarlo de forma gradual a una arquitectura moderna con
+**Python (FastAPI)** y **React + TypeScript**, sin detener el sistema.
 
-The application was initially created by **Siamon Hasan**, useing [php](http:php.net), [mysql](https://www.mysql.com) and [bootstrap](http://getbootstrap.com).
+> 🚧 Proyecto en progreso. Estado actual: **Fase 1, auditoría y pruebas de caracterización**.
 
+## Hoja de ruta
 
-OSWA-INV is a web based Inventory System, that will allow you to keep tracking of the quantity buying and selling price of the products existing in your warehouse or business. When creating a new products, you can set a quantity,buying and selling price.
+| Fase | Descripción | Estado |
+|---|---|---|
+| 0 | Sistema original, ejecutable con Docker | ✅ |
+| 1 | [Auditoría](AUDITORIA.md) y pruebas de caracterización con PHPUnit | ✅ |
+| 2 | Corrección de seguridad y lógica de negocio; refactor en capas | ⏳ |
+| 3 | Migración del módulo de productos a FastAPI | ⏳ |
+| 4 | Nueva interfaz de productos en React + TypeScript | ⏳ |
+| 5 | Convivencia de ambos sistemas detrás de nginx | ⏳ |
+| 6 | Integración continua con GitHub Actions | ⏳ |
 
-****
+## Hallazgos principales
 
-If you find any bug, and a fix for that bug, please leave a comment on the github page for this project and i will push the change into the master branch.
+La [auditoría completa](AUDITORIA.md) detalla 10 hallazgos. Los más graves:
 
+- 🔴 Contraseñas guardadas con **SHA-1 sin sal**.
+- 🟠 **Sin protección CSRF**: un enlace GET borra productos, ventas y usuarios.
+- 🟠 El **total de la venta lo decide el navegador**: se pueden vender 3 baterías por Gs. 1.
+- 🟠 Se puede vender **más de lo que hay en stock**.
 
-### Installing this application is fairly easy, just follow these steps:
-****
+## Cómo ejecutarlo
 
+```bash
+docker compose up --build
+```
 
-1. Download the latest version with git (`git clone https://github.com/siamon123/warehouse-inventory-system.git`)
+Abre http://localhost:8080 e inicia sesión con `admin` / `admin`.
 
-2. Import/load oswa_inv.sql into your mysql database. This should set up the basic structure of the database system.
+## Pruebas
 
-3. Modify the includes/config.php and change the variables to match your host, database, username and passwords.
+Las pruebas de caracterización tratan al sistema como una caja negra: levantan el sitio con el
+servidor embebido de PHP contra una base de datos de pruebas y hacen peticiones HTTP como un navegador.
+Así protegen el comportamiento actual sin tener que modificar el código legado.
 
-4. Change all Folder permission inside uploads folder either add them to group call `www` if available or `777`.
+Requisitos: PHP 8.2+ con `mysqli` y un MySQL/MariaDB local con un usuario `app` / `app`
+(configurable en `phpunit.xml.dist`).
 
-5. Then loging by typing **username** and **password**:
+```bash
+composer install
+composer test
+```
 
+```
+OK (12 tests, 21 assertions)
+```
 
-   Administrator        | Special User           | Default User
-   ---------------------| -----------------------| -------------------
-   **Username** : admin | **Username** : special | **Username** : user
-   **Password** : admin | **Password** : special | **Password** : user
+## Créditos
 
-6. Good luck!  
-
-- - - -
-
-## DON'T FORGET TO GIVE US FEEDBACK
-
-- - - -
-
-Like  [@OSWA](https://www.facebook.com/oswapp) on Facebook for more project.
-
-Don't forget to visit [oswapp.com](http://oswapp.com "OSWA")
+Sistema original: **OSWA-INV** de Siamon Hasan, publicado bajo licencia MIT
+(ver [LICENSE](LICENSE) y el [README original](README-original.md)).

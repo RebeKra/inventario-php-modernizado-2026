@@ -1,0 +1,19 @@
+{
+    "name": "rebekra/inventario-php-modernizado",
+    "description": "Modernización del sistema de inventario OSWA-INV",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.6 || ^10.0 || ^11.0"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    }
+}

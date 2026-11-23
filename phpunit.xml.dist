@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="tests/bootstrap.php" colors="true">
+    <testsuites>
+        <testsuite name="caracterizacion">
+            <directory>tests/Caracterizacion</directory>
+        </testsuite>
+    </testsuites>
+    <php>
+        <env name="TEST_DB_HOST" value="127.0.0.1"/>
+        <env name="TEST_DB_USER" value="app"/>
+        <env name="TEST_DB_PASS" value="app"/>
+        <env name="TEST_DB_NAME" value="oswa_inv_test"/>
+        <env name="TEST_PORT" value="8765"/>
+    </php>
+</phpunit>
