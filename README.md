@@ -8,7 +8,7 @@ El objetivo es mostrar cómo se trabaja con código legado que no escribiste: en
 protegerlo con pruebas, corregirlo y migrarlo de forma gradual a una arquitectura moderna con
 **Python (FastAPI)** y **React + TypeScript**, sin detener el sistema.
 
-> 🚧 Proyecto en progreso. Estado actual: **Fase 3, módulo de productos migrado a FastAPI**.
+> 🚧 Proyecto en progreso. Estado actual: **Fase 4, nueva interfaz de productos en React + TypeScript**.
 
 ## Hoja de ruta
 
@@ -18,7 +18,7 @@ protegerlo con pruebas, corregirlo y migrarlo de forma gradual a una arquitectur
 | 1 | [Auditoría](AUDITORIA.md) y pruebas de caracterización con PHPUnit | ✅ |
 | 2 | Corrección de seguridad y lógica de negocio; primeras capas en `src/` | ✅ |
 | 3 | Migración del módulo de productos a FastAPI | ✅ |
-| 4 | Nueva interfaz de productos en React + TypeScript | ⏳ |
+| 4 | Nueva interfaz de productos en React + TypeScript | ✅ |
 | 5 | Convivencia de ambos sistemas detrás de nginx | ⏳ |
 | 6 | Integración continua con GitHub Actions | ⏳ |
 
@@ -78,6 +78,34 @@ api/app/
 └── modelos.py    Mapeo ORM (SQLAlchemy) sobre las tablas existentes
 ```
 
+## Interfaz de productos (React + TypeScript)
+
+![Listado de productos](docs/capturas/productos-lista.png)
+
+Pantalla nueva del módulo de productos, construida con **React 19, TypeScript, Vite y Tailwind CSS**
+sobre la API de FastAPI: búsqueda mientras se escribe, filtro por categoría, paginación,
+alta y edición con validación, y aviso de stock bajo.
+
+```
+frontend/src/
+├── PaginaProductos.tsx         Estado de la pantalla y coordinación
+├── componentes/                Tabla, formulario y paginación
+├── api/cliente.ts              Acceso tipado a la API y manejo de errores
+├── tipos.ts                    Contratos de la API en TypeScript
+└── utils/formato.ts            Formato de guaraníes sin perder precisión
+```
+
+- **Validación en dos niveles:** el formulario valida al instante y la API vuelve a validar todo;
+  los errores de la API (por ejemplo, un nombre repetido) se muestran junto al campo correspondiente.
+- **Accesible:** etiquetas asociadas a cada campo, mensajes de error anunciados y botones con nombre descriptivo.
+
+<details>
+<summary>Formulario con validación</summary>
+
+![Formulario de producto](docs/capturas/productos-formulario.png)
+
+</details>
+
 ## Decisiones técnicas
 
 | Decisión | Por qué | Costo que se acepta |
@@ -86,6 +114,7 @@ api/app/
 | **Mapear las tablas existentes** sin renombrarlas | El sistema PHP sigue funcionando sin cambios | Los nombres en inglés y con errores (`categorie_id`) quedan escondidos detrás del ORM |
 | **Importes como texto decimal** (`"890000.00"`) en el JSON | Evita los errores de redondeo de los números con coma flotante | El cliente debe convertirlos para hacer cálculos |
 | **Las mismas pruebas de datos** para PHP y Python | Garantiza que ambos sistemas funcionan sobre el mismo esquema | Un cambio en los datos de prueba afecta a las dos suites |
+| **Formato de importes con texto y `BigInt`** en el frontend | Los guaraníes no tienen decimales y los importes grandes no pierden precisión | Hay que convertir explícitamente si se necesitan cálculos |
 | **Autenticación en la puerta de entrada** (Fase 5) | La sesión vive en PHP: nginx la verificará antes de llegar a la API, sin duplicar el login | Mientras tanto, la API no debe exponerse sin el proxy |
 
 ## Cómo ejecutarlo
@@ -96,6 +125,7 @@ docker compose up --build
 
 - Sistema PHP: http://localhost:8080 (usuario `admin`, contraseña `admin`)
 - API de productos: http://localhost:8000/api/v2/docs
+- Interfaz nueva (modo desarrollo): `cd frontend && npm install && npm run dev` → http://localhost:5173/productos/
 
 ## Pruebas
 
@@ -128,6 +158,18 @@ pytest
 
 ```
 16 passed
+```
+
+Interfaz en React (Vitest + Testing Library):
+
+```bash
+cd frontend
+npm install
+npm test
+```
+
+```
+Tests  14 passed (14)
 ```
 
 ## Créditos
